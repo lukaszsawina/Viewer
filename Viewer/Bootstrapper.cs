@@ -1,6 +1,6 @@
-﻿using Viewer.Pages;
-using Stylet;
+﻿using Stylet;
 using StyletIoC;
+using Viewer.ViewModel;
 
 namespace Viewer
 {

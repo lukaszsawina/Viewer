@@ -1,0 +1,49 @@
+﻿<Window x:Class="Viewer.View.ShellView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:s="https://github.com/canton7/Stylet"
+        xmlns:local="clr-namespace:Viewer.ViewModel"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance local:ShellViewModel}"
+        Title="Viewer"
+        WindowStyle="SingleBorderWindow"
+        Width="1366"
+        Height="768"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="8*"/>
+            <ColumnDefinition Width="6"/>
+            <ColumnDefinition Width="3*"/>
+        </Grid.ColumnDefinitions>
+
+        <Image Source="{Binding ImgViewport, UpdateSourceTrigger=PropertyChanged}" Width="100" Height="100" />
+        
+        <Border Grid.Column="1"
+                Height="auto" 
+                Width="4"
+                Background="{StaticResource SecondaryBrush}"
+                Margin="0 10"
+                CornerRadius="5"
+                />
+
+        <StackPanel Grid.Column="2">
+            <TextBlock Text="Viewer" 
+                       Style="{StaticResource TitleStyles}"/>
+            <Button x:Name="Start_btn"
+                    Content="Start"
+                    Command="{s:Action Start}"
+                    Style="{StaticResource ButtonStyle}"/>
+            <Border Style="{StaticResource SeparatorStyle}"/>
+            <Button x:Name="Stop_btn"
+                    Content="Stop"
+                    Command="{s:Action Stop}"
+                    Style="{StaticResource ButtonStyle}"/>
+            <Border Style="{StaticResource SeparatorStyle}"/>
+        </StackPanel>
+    </Grid>
+</Window>

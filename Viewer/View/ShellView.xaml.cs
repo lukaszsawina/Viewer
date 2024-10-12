@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace Viewer.Pages
+namespace Viewer.View
 {
     /// <summary>
     /// Interaction logic for ShellView.xaml
@@ -11,5 +11,6 @@ namespace Viewer.Pages
         {
             this.InitializeComponent();
         }
+
     }
 }

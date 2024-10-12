@@ -8,6 +8,14 @@
             <s:ApplicationLoader.Bootstrapper>
                 <local:Bootstrapper/>
             </s:ApplicationLoader.Bootstrapper>
+
+            <s:ApplicationLoader.MergedDictionaries>
+                <ResourceDictionary Source="Styles/Colors.xaml"/>
+                <ResourceDictionary Source="Styles/TitleStyle.xaml"/>
+                <ResourceDictionary Source="Styles/ButtonStyle.xaml"/>
+                <ResourceDictionary Source="Styles/SeparatorStyle.xaml"/>
+            </s:ApplicationLoader.MergedDictionaries>
         </s:ApplicationLoader>
+        
     </Application.Resources>
 </Application>
