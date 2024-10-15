@@ -1,0 +1,58 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Style TargetType="ComboBox" x:Key="CameraSourceStyle">
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding" Value="5"/>
+        <Setter Property="FontSize" Value="24"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <ToggleButton Name="ToggleButton"
+                                      Grid.Column="2"
+                                      Focusable="False"
+                                      Background="Transparent"
+                                      BorderThickness="0"
+                                      BorderBrush="{StaticResource SecondaryBrush}"
+                                      Padding="5"
+                                      Margin="5"
+                                      IsChecked="{Binding Path=IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                      ClickMode="Press"
+                                      Cursor="Hand">
+                            <ContentPresenter/>
+                        </ToggleButton>
+                        <ContentPresenter Name="ContentSite"
+                                          IsHitTestVisible="False"
+                                          Content="{TemplateBinding SelectionBoxItem}"
+                                          ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                          ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                          VerticalAlignment="Center"
+                                          HorizontalAlignment="Center"
+                                          Margin="5 10"/>
+                        <Popup Name="Popup"
+                               Placement="Bottom"
+                               AllowsTransparency="False"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               Focusable="False"
+                               PopupAnimation="Slide">
+                            <Grid Name="DropDown"
+                                  SnapsToDevicePixels="True"
+                                  Background="{StaticResource SecondaryBrush}"
+                                  MinWidth="{TemplateBinding ActualWidth}"
+>
+                                <Border Name="DropDownBorder" BorderThickness="1" BorderBrush="{TemplateBinding BorderBrush}">
+                                    <ScrollViewer Margin="4,6,4,6" SnapsToDevicePixels="True">
+                                        <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Contained" Cursor="Hand"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Grid>
+                        </Popup>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+</ResourceDictionary>

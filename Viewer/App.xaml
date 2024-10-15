@@ -14,6 +14,7 @@
                 <ResourceDictionary Source="Styles/TitleStyle.xaml"/>
                 <ResourceDictionary Source="Styles/ButtonStyle.xaml"/>
                 <ResourceDictionary Source="Styles/SeparatorStyle.xaml"/>
+                <ResourceDictionary Source="Styles/CameraSourceStyle.xaml"/>
             </s:ApplicationLoader.MergedDictionaries>
         </s:ApplicationLoader>
         
