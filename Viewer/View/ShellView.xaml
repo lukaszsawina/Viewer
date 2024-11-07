@@ -51,6 +51,11 @@
         <StackPanel Grid.Column="2">
             <TextBlock Text="Viewer" 
                        Style="{StaticResource TitleStyles}"/>
+            <TextBlock Text="{Binding CurrentText}" 
+                       FontSize="14" 
+                       Foreground="{StaticResource OrangeBrush}"
+                       TextWrapping="Wrap"
+                       Padding="5 0"/>
             <TextBlock Text="Camera source" 
                        FontSize="24" 
                        Foreground="{StaticResource TextBrush}"
@@ -73,6 +78,20 @@
                     Style="{StaticResource ButtonStyle}"/>
             <Border Style="{StaticResource SeparatorStyle}"
                     Visibility="{Binding StopButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button x:Name="StartWorkspaceCapture_btn"
+                Content="Start workspace capture"
+                Visibility="{Binding StartedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                Command="{s:Action StartWorkspaceCapture}"
+                Style="{StaticResource ButtonStyle}"/>
+            <Border Style="{StaticResource SeparatorStyle}"
+                Visibility="{Binding StartedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button x:Name="StopWorkspaceCapture_btn"
+                Content="Stop workspace capture"
+                Visibility="{Binding StopedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                Command="{s:Action StopWorkspaceCapture}"
+                Style="{StaticResource ButtonStyle}"/>
+            <Border Style="{StaticResource SeparatorStyle}"
+                Visibility="{Binding StopedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <Button x:Name="Start_Rec_btn"
                     Content="Record"
                     Visibility="{Binding StartRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -87,6 +106,10 @@
                     Style="{StaticResource ButtonStyle}"/>
             <Border Style="{StaticResource SeparatorStyle}"
                     Visibility="{Binding StopRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button x:Name="test"
+                Content="test"
+                Command="{s:Action OpenVisualisation}"
+                Style="{StaticResource ButtonStyle}"/>
         </StackPanel>
 
         <StackPanel Grid.Column="2"
@@ -95,6 +118,11 @@
                     Content="Recordings"
                     Command="{s:Action OpenFolder}"
                     Style="{StaticResource ButtonStyle}" />
+            <Border Style="{StaticResource SeparatorStyle}"/>
+            <Button x:Name="Workspaces_btn"
+                Content="Workspaces"
+                Command="{s:Action OpenFolderWorkspaces}"
+                Style="{StaticResource ButtonStyle}" />
             <Border Style="{StaticResource SeparatorStyle}"/>
         </StackPanel>
          
