@@ -233,7 +233,7 @@ namespace Viewer.ViewModel
 
         private void SaveFrameAsImage(Mat frame, int imageIndex)
         {
-            string imagesFolderPath = Path.Combine(workspaceFolderPath, "Images");
+            string imagesFolderPath = Path.Combine(workspaceFolderPath, "images");
             string filePath = Path.Combine(imagesFolderPath, $"{imageIndex}.jpg");
 
             Cv2.ImWrite(filePath, frame);
@@ -290,10 +290,10 @@ namespace Viewer.ViewModel
         public void StartWorkspaceCapture()
         {
             string date = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-            workspaceFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Files/Workspace_{date}");
+            workspaceFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Workspaces/Workspace_{date}");
             Directory.CreateDirectory(workspaceFolderPath);
 
-            string imagesFolderPath = Path.Combine(workspaceFolderPath, "Images");
+            string imagesFolderPath = Path.Combine(workspaceFolderPath, "images");
             Directory.CreateDirectory(imagesFolderPath);
 
             IsStartedWorkspaceCapture = true;
@@ -301,7 +301,10 @@ namespace Viewer.ViewModel
 
         public void StopWorkspaceCapture()
         {
-            OpenVisualisation();
+            var view = new WorkspaceProcessingViewModel();
+
+            this.windowManager.ShowWindow(view);
+
             workspaceFolderPath = null;
             IsStartedWorkspaceCapture = false;
         }

@@ -21,6 +21,7 @@ public class WorkspaceProcessingViewModel : Screen
 {
 
     private string _currentText;
+    private static int _currentProcessIndex;
     Process colmapProcess = null;
     Process exeProcess = null;
     private CancellationTokenSource _cancellationTokenSource;
@@ -74,8 +75,8 @@ public class WorkspaceProcessingViewModel : Screen
         {
             FileName = colmapBatPath,
             Arguments = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual",
-            UseShellExecute = false,  // Ustawienie na false dla pełnej kontroli nad procesem
-            CreateNoWindow = true,    // Ukryj okno terminala
+            UseShellExecute = true,  // Ustawienie na false dla pełnej kontroli nad procesem
+            CreateNoWindow = false,    // Ukryj okno terminala
         };
 
         try
@@ -101,7 +102,7 @@ public class WorkspaceProcessingViewModel : Screen
                         Task.Delay(500).Wait();
                     }
 
-                    string exeProcessName = "colmap"; 
+                    string exeProcessName = "colmap";
 
                     exeProcess = Process.GetProcessesByName(exeProcessName).FirstOrDefault();
                     if (exeProcess != null)
@@ -128,6 +129,7 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
+
     public void NoCommand()
     {
         this.RequestClose();
@@ -136,12 +138,11 @@ public class WorkspaceProcessingViewModel : Screen
     public void CancellCommand()
     {
         _cancellationTokenSource?.Cancel();
-
     }
 
     protected override void OnClose()
     {
-
+        CancellCommand();
         base.OnClose();
     }
 }

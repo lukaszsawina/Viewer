@@ -35,7 +35,7 @@
     <None Update="Test\test.ply">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-	<None Update="COLMAP-CL\**\*.*">
+	<None Update="..\COLMAP-CL\**\*.*">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	</None>
   </ItemGroup>
