@@ -6,14 +6,17 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Media3D;
+using static Ply.Net.PlyParser;
 
 namespace Viewer.ViewModel;
 
@@ -25,7 +28,7 @@ public class WorkspaceProcessingViewModel : Screen
     Process colmapProcess = null;
     Process exeProcess = null;
     private CancellationTokenSource _cancellationTokenSource;
-    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_komoda_2";
+    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_mieszkanie";
 
     public string CurrentText
     {
@@ -62,7 +65,7 @@ public class WorkspaceProcessingViewModel : Screen
     public WorkspaceProcessingViewModel()
     {
         _currentText = "Do you want to start processing Your workspace?";
-        
+
     }
 
     public async Task YesCommand()
@@ -74,8 +77,8 @@ public class WorkspaceProcessingViewModel : Screen
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
             FileName = colmapBatPath,
-            Arguments = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual",
-            UseShellExecute = true,  // Ustawienie na false dla pełnej kontroli nad procesem
+            Arguments = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1",
+            UseShellExecute = false,  // Ustawienie na false dla pełnej kontroli nad procesem
             CreateNoWindow = false,    // Ukryj okno terminala
         };
 
@@ -110,11 +113,6 @@ public class WorkspaceProcessingViewModel : Screen
                         exeProcess.Kill();
                     }
                 }
-
-                IsLoading = false;
-                AreButtonsVisible = true;
-                CurrentText = "Do you want to start processing Your workspace?";
-
             });
         }
         catch (Exception ex)
@@ -127,8 +125,57 @@ public class WorkspaceProcessingViewModel : Screen
         {
             _cancellationTokenSource?.Dispose();
         }
+
+        string inputPath = Path.Combine(_workspacePath, "dense", "0", "fused.ply");
+        string outputPath = Path.Combine(_workspacePath, "dense", "0", "poisson_mesh.ply");
+        await RunPythonScriptAsync("save_mesh.py", inputPath, outputPath);
+
+        await RunPythonScriptAsync($"show_mesh.py", outputPath);
+
+        IsLoading = false;
+        AreButtonsVisible = true;
+        CurrentText = "Do you want to start processing Your workspace?";
     }
 
+    public async Task RunPythonScriptAsync(string scriptName, string inputPath, string outputPath = null)
+    {
+        // Tworzenie pełnej ścieżki do skryptu
+        string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Workspace_Visualiser", scriptName);
+
+        // Przygotowanie argumentów
+        string arguments;
+        if (string.IsNullOrEmpty(outputPath))
+        {
+            arguments = $"\"{scriptPath}\" \"{inputPath}\"";
+        }
+        else
+        {
+            arguments = $"\"{scriptPath}\" \"{inputPath}\" \"{outputPath}\"";
+        }
+
+        // Konfiguracja procesu
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = "pythonw",              // Użycie pythonw zamiast cmd.exe
+            Arguments = arguments,             // Przekazanie argumentów
+            UseShellExecute = false,           // Bez otwierania terminala
+            CreateNoWindow = true              // Zapobiega otwarciu terminala
+        };
+
+        
+        // Uruchomienie procesu
+        using (Process process = Process.Start(startInfo))
+        {
+            if (process != null)
+            {
+                await process.WaitForExitAsync();  // Oczekiwanie na zakończenie procesu
+            }
+            else
+            {
+                throw new InvalidOperationException("Nie udało się uruchomić skryptu Python.");
+            }
+        }
+        }
 
     public void NoCommand()
     {
