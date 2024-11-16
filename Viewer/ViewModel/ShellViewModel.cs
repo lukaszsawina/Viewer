@@ -8,7 +8,6 @@ using System.Threading.Tasks;
 using System.Collections.ObjectModel;
 using System;
 using System.IO;
-using System.Windows.Controls;
 using System.Diagnostics;
 
 
@@ -19,7 +18,25 @@ namespace Viewer.ViewModel
         private VideoCapture _videoCapture;
         private VideoWriter videoWriter;
         private CancellationTokenSource _cancellationTokenSource;
-        public ObservableCollection<string> CameraList { get; set; } 
+
+        private readonly IWindowManager windowManager;
+        private string workspaceFolderPath;
+        private int frameCount = 0;
+
+        public ObservableCollection<string> CameraList { get; set; }
+
+        private string _currentText;
+
+        public string CurrentText
+        {
+            get => _currentText;
+            set
+            {
+                _currentText = value;
+                NotifyOfPropertyChange(() => CurrentText);
+            }
+        }
+
         private int _selectedCameraIndex; 
 
         public int SelectedCameraIndex
@@ -63,6 +80,8 @@ namespace Viewer.ViewModel
                 NotifyOfPropertyChange(() => StopButtonVisible);
                 NotifyOfPropertyChange(() => StartRecButtonVisible);
                 NotifyOfPropertyChange(() => StopRecButtonVisible);
+                NotifyOfPropertyChange(() => StartedWorkspaceCaptureVisible);
+                NotifyOfPropertyChange(() => StopedWorkspaceCaptureVisible);
                 NotifyOfPropertyChange(() => CameraImage);
             }
         }
@@ -86,10 +105,28 @@ namespace Viewer.ViewModel
         public bool StartRecButtonVisible => (IsStarted && !IsRecording);
         public bool StopRecButtonVisible => (IsStarted && IsRecording);
 
-        public ShellViewModel()
+        private bool _isStartedWorkspaceCapture = false;
+
+        public bool IsStartedWorkspaceCapture
         {
+            get => _isStartedWorkspaceCapture;
+            set
+            {
+                SetAndNotify(ref _isStartedWorkspaceCapture, value);
+                NotifyOfPropertyChange(() => StartedWorkspaceCaptureVisible);
+                NotifyOfPropertyChange(() => StopedWorkspaceCaptureVisible);
+            }
+        }
+
+        public bool StartedWorkspaceCaptureVisible => !IsStartedWorkspaceCapture && IsStarted;
+        public bool StopedWorkspaceCaptureVisible => IsStartedWorkspaceCapture && IsStarted;
+
+        public ShellViewModel(IWindowManager windowManager)
+        {
+            CurrentText = "Select camera source and press \"Start\"";
             CameraList = new ObservableCollection<string>();
             LoadAvailableCameras();
+            this.windowManager = windowManager;
         }
 
         private void LoadAvailableCameras()
@@ -121,19 +158,28 @@ namespace Viewer.ViewModel
             string imagePath = Path.Combine(solutionDir, "Images/default.jpg");
             return new BitmapImage(new Uri(imagePath, UriKind.Absolute));
         }
+
         public void StartCamera()
         {
-            _videoCapture = new VideoCapture(SelectedCameraIndex); 
-            if (!_videoCapture.IsOpened())
+            try
             {
-                MessageBox.Show("Nie można otworzyć kamery.");
-                return;
+                _videoCapture = new VideoCapture(SelectedCameraIndex);
+                if (!_videoCapture.IsOpened())
+                {
+                    MessageBox.Show("Unable to open camera.");
+                    return;
+                }
+
+                _cancellationTokenSource = new CancellationTokenSource();
+                Task.Run(() => CaptureFrames(_cancellationTokenSource.Token));
+
+                IsStarted = true;
+                CurrentText = "To stop capturing press \"Stop\", \nTo start capturing the surroundings press \"Start workspace capture\", \nTo record video press \"Record\"";
             }
-
-            _cancellationTokenSource = new CancellationTokenSource();
-            Task.Run(() => CaptureFrames(_cancellationTokenSource.Token));
-
-            IsStarted = true;
+            catch (Exception ex)
+            {
+                MessageBox.Show("Unable to open camera");
+            }
         }
 
         private async Task CaptureFrames(CancellationToken token)
@@ -142,26 +188,55 @@ namespace Viewer.ViewModel
             {
                 while (!token.IsCancellationRequested)
                 {
-                    _videoCapture.Read(mat); 
-                    if (!mat.Empty())
+                    try
                     {
-                        var bitmapImage = mat.ToBitmapSource();
-                        bitmapImage.Freeze();
-
-                        Application.Current.Dispatcher.Invoke(() =>
+                        _videoCapture.Read(mat);
+                        if (!mat.Empty())
                         {
-                            CameraImage = bitmapImage;
-                        });
+                            var bitmapImage = mat.ToBitmapSource();
+                            bitmapImage.Freeze();
 
-                        if (IsRecording && videoWriter != null)
+                            Application.Current.Dispatcher.Invoke(() =>
+                            {
+                                CameraImage = bitmapImage;
+                            });
+
+                            if (IsRecording && videoWriter != null)
+                            {
+                                videoWriter.Write(mat);
+                            }
+
+                            if (!string.IsNullOrEmpty(workspaceFolderPath) && frameCount % 10 == 0)
+                            {
+                                await Task.Run(() => SaveFrameAsImage(mat, frameCount / 10));
+                            }
+
+                            frameCount++;
+                        }
+                        else
                         {
-                            videoWriter.Write(mat);
+                            MessageBox.Show("Unable to fetch video from camera.");
+                            StopCamera();
+                            break;
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show("Unable to fetch video from camera.");
+                        await Task.Delay(100);
+                    }
 
-                    await Task.Delay(30); 
+                    await Task.Delay(30);
                 }
             }
+        }
+
+        private void SaveFrameAsImage(Mat frame, int imageIndex)
+        {
+            string imagesFolderPath = Path.Combine(workspaceFolderPath, "images");
+            string filePath = Path.Combine(imagesFolderPath, $"{imageIndex}.jpg");
+
+            Cv2.ImWrite(filePath, frame);
         }
 
         public void StopCamera()
@@ -179,13 +254,14 @@ namespace Viewer.ViewModel
                 _videoCapture = null;
             }
 
-            if(IsRecording)
+            if (IsRecording)
             {
                 StopRecording();
             }
 
-
+            workspaceFolderPath = null;
             IsStarted = false;
+            CurrentText = "Select camera source and press \"Start\"";
         }
 
         public void StartRecording()
@@ -193,7 +269,6 @@ namespace Viewer.ViewModel
             if (!IsRecording)
             {
                 string solutionDir = AppDomain.CurrentDomain.BaseDirectory;
-
 
                 string fileName = Path.Combine(solutionDir, $"Recordings/video_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");
                 videoWriter = new VideoWriter(fileName, FourCC.H264, 30, new OpenCvSharp.Size(640, 480));
@@ -212,6 +287,28 @@ namespace Viewer.ViewModel
             }
         }
 
+        public void StartWorkspaceCapture()
+        {
+            string date = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+            workspaceFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Workspaces/Workspace_{date}");
+            Directory.CreateDirectory(workspaceFolderPath);
+
+            string imagesFolderPath = Path.Combine(workspaceFolderPath, "images");
+            Directory.CreateDirectory(imagesFolderPath);
+
+            IsStartedWorkspaceCapture = true;
+        }
+
+        public void StopWorkspaceCapture()
+        {
+            var view = new WorkspaceProcessingViewModel();
+
+            this.windowManager.ShowWindow(view);
+
+            workspaceFolderPath = null;
+            IsStartedWorkspaceCapture = false;
+        }
+
         public void OpenFolder()
         {
             string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Recordings");
@@ -222,6 +319,25 @@ namespace Viewer.ViewModel
             }
 
             Process.Start("explorer.exe", folderPath);
+        }
+
+        public void OpenFolderWorkspaces()
+        {
+            string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Files");
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            Process.Start("explorer.exe", folderPath);
+        }
+
+        public void OpenVisualisation()
+        {
+            var view = new VisualisationViewModel();
+
+            this.windowManager.ShowWindow(view);
         }
 
         protected override void OnClose()

@@ -11,9 +11,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="HelixToolkit.SharpDX.Core" Version="2.25.0" />
+    <PackageReference Include="HelixToolkit.SharpDX.Core.Wpf" Version="2.25.0" />
+    <PackageReference Include="HelixToolkit.Wpf" Version="2.25.0" />
     <PackageReference Include="OpenCvSharp4" Version="4.10.0.20240616" />
     <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.10.0.20240616" />
     <PackageReference Include="OpenCvSharp4.WpfExtensions" Version="4.10.0.20240616" />
+    <PackageReference Include="Ply.Net" Version="5.5.2" />
     <PackageReference Include="Stylet" Version="1.3.7.0" />
     <PackageReference Include="System.Drawing.Common" Version="8.0.10" />
   </ItemGroup>
@@ -21,6 +25,21 @@
   <ItemGroup>
     <None Update="Images\default.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Images\icon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Test\test.ply">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Test\test.ply">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+	<None Update="COLMAP-CL\**\*.*">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</None>
+	<None Update="Workspace_Visualiser\**\*.*">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 </Project>

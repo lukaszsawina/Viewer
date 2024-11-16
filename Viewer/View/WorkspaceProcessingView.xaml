@@ -1,0 +1,71 @@
+﻿<Window x:Class="Viewer.View.WorkspaceProcessingView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:Viewer.View"
+        xmlns:s="https://github.com/canton7/Stylet"
+        xmlns:helpers="clr-namespace:Viewer.Helpers"
+        mc:Ignorable="d"
+        Title="Worskspace Processing" 
+        Height="240" Width="400"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource BackgroundBrush}">
+
+    <Window.Resources>
+        <helpers:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="3*"/>
+            <RowDefinition Height="2*"/>
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="Workspace Processing" 
+                       Style="{StaticResource TitleStyles}"
+                       FontSize="24"/>
+            <TextBlock Text="{Binding CurrentText}" 
+                       FontSize="14" 
+                       HorizontalAlignment="Center"
+                       Foreground="{StaticResource OrangeBrush}"
+                       TextWrapping="Wrap"
+                       Padding="5 0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Button x:Name="Yes_btn"
+                    Content="Yes"
+                    Command="{s:Action YesCommand}"
+                    Style="{StaticResource ButtonStyle}"
+                    Visibility="{Binding AreButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+            <Button x:Name="No_btn"
+                    Grid.Column="1"
+                    Content="No"
+                    Command="{s:Action NoCommand}"
+                    Style="{StaticResource ButtonStyle}"
+                    Visibility="{Binding AreButtonsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
+
+            <StackPanel Grid.ColumnSpan="2"
+                        Visibility="{Binding IsLoading, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ProgressBar x:Name="LoadingBar"
+                             Height="20"
+                             Width="200"
+                             IsIndeterminate="True"
+                             HorizontalAlignment="Center"
+                             VerticalAlignment="Center"/>
+                <Button x:Name="Cancell_btn"
+                        Margin="0 20 0 0"
+                        Content="Cancell"
+                        Command="{s:Action CancellCommand}"
+                        Style="{StaticResource ButtonStyle}"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
