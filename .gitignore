@@ -361,3 +361,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+!/Viewer/COLMAP-CL/bin
+
+!/Viewer/COLMAP-CL/bin/colmap.exe	
