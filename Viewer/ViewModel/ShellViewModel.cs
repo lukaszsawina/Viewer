@@ -333,13 +333,6 @@ namespace Viewer.ViewModel
             Process.Start("explorer.exe", folderPath);
         }
 
-        public void OpenVisualisation()
-        {
-            var view = new VisualisationViewModel();
-
-            this.windowManager.ShowWindow(view);
-        }
-
         protected override void OnClose()
         {
             StopCamera();

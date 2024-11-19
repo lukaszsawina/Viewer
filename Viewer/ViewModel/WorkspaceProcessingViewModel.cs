@@ -1,22 +1,14 @@
-﻿using HelixToolkit.Wpf;
-using HelixToolkit.Wpf.SharpDX;
-using OpenCvSharp;
-using Stylet;
+﻿using Stylet;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Media3D;
-using static Ply.Net.PlyParser;
+using System.Windows.Shapes;
+using Path = System.IO.Path;
+
 
 namespace Viewer.ViewModel;
 
@@ -24,11 +16,10 @@ public class WorkspaceProcessingViewModel : Screen
 {
 
     private string _currentText;
-    private static int _currentProcessIndex;
     Process colmapProcess = null;
     Process exeProcess = null;
     private CancellationTokenSource _cancellationTokenSource;
-    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_mieszkanie";
+    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_mieszkanie_3";
 
     public string CurrentText
     {
@@ -62,10 +53,20 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
+    private bool _isFinished = false;
+    public bool IsFinished
+    {
+        get => _isFinished;
+        set
+        {
+            _isFinished = value;
+            NotifyOfPropertyChange(() => IsFinished);
+        }
+    }
+
     public WorkspaceProcessingViewModel()
     {
         _currentText = "Do you want to start processing Your workspace?";
-
     }
 
     public async Task YesCommand()
@@ -74,12 +75,15 @@ public class WorkspaceProcessingViewModel : Screen
         var cancellationToken = _cancellationTokenSource.Token;
         string colmapBatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "COLMAP-CL", "colmap.bat");
 
+        string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
+        //string colmapArgument = $"--help";
+
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
             FileName = colmapBatPath,
-            Arguments = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1",
-            UseShellExecute = false,  // Ustawienie na false dla pełnej kontroli nad procesem
-            CreateNoWindow = false,    // Ukryj okno terminala
+            Arguments = colmapArgument,
+            UseShellExecute = false,  
+            CreateNoWindow = false,
         };
 
         try
@@ -88,7 +92,8 @@ public class WorkspaceProcessingViewModel : Screen
             IsLoading = true;
             AreButtonsVisible = false;
 
-            // Task uruchamiający proces w tle
+            bool taskCanceled = false;
+
             await Task.Run(() =>
             {
                 using (colmapProcess = new Process { StartInfo = startInfo })
@@ -99,50 +104,50 @@ public class WorkspaceProcessingViewModel : Screen
                     {
                         if (cancellationToken.IsCancellationRequested)
                         {
-                            break;
+                            string exeProcessName = "colmap";
+
+                            exeProcess = Process.GetProcessesByName(exeProcessName).FirstOrDefault();
+                            if (exeProcess != null)
+                            {
+                                taskCanceled = true;
+                                exeProcess.Kill();
+                            }
                         }
 
                         Task.Delay(500).Wait();
                     }
-
-                    string exeProcessName = "colmap";
-
-                    exeProcess = Process.GetProcessesByName(exeProcessName).FirstOrDefault();
-                    if (exeProcess != null)
-                    {
-                        exeProcess.Kill();
-                    }
                 }
             });
+
+            if(taskCanceled)
+            {
+                IsLoading = false;
+                AreButtonsVisible = true;
+                CurrentText = "Do you want to start processing Your workspace?";
+            }
+            else
+            {
+                IsLoading = false;
+                IsFinished = true;
+                CurrentText = "Reconstruction is ready, do You want to display it?";
+            }
         }
         catch (Exception ex)
         {
             IsLoading = false;
             AreButtonsVisible = true;
-            MessageBox.Show($"Wystąpił błąd podczas uruchamiania colmap.bat: {ex.Message}");
+            MessageBox.Show($"Program was unable to start reconstruction: {ex.Message}");
         }
         finally
         {
             _cancellationTokenSource?.Dispose();
         }
-
-        string inputPath = Path.Combine(_workspacePath, "dense", "0", "fused.ply");
-        string outputPath = Path.Combine(_workspacePath, "dense", "0", "poisson_mesh.ply");
-        await RunPythonScriptAsync("save_mesh.py", inputPath, outputPath);
-
-        await RunPythonScriptAsync($"show_mesh.py", outputPath);
-
-        IsLoading = false;
-        AreButtonsVisible = true;
-        CurrentText = "Do you want to start processing Your workspace?";
     }
 
     public async Task RunPythonScriptAsync(string scriptName, string inputPath, string outputPath = null)
     {
-        // Tworzenie pełnej ścieżki do skryptu
         string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Workspace_Visualiser", scriptName);
 
-        // Przygotowanie argumentów
         string arguments;
         if (string.IsNullOrEmpty(outputPath))
         {
@@ -153,43 +158,104 @@ public class WorkspaceProcessingViewModel : Screen
             arguments = $"\"{scriptPath}\" \"{inputPath}\" \"{outputPath}\"";
         }
 
-        // Konfiguracja procesu
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
-            FileName = "pythonw",              // Użycie pythonw zamiast cmd.exe
-            Arguments = arguments,             // Przekazanie argumentów
-            UseShellExecute = false,           // Bez otwierania terminala
-            CreateNoWindow = true              // Zapobiega otwarciu terminala
+            FileName = "python.exe",
+            Arguments = arguments,
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
 
-        
-        // Uruchomienie procesu
         using (Process process = Process.Start(startInfo))
         {
             if (process != null)
             {
-                await process.WaitForExitAsync();  // Oczekiwanie na zakończenie procesu
+                await process.WaitForExitAsync();
             }
             else
             {
                 throw new InvalidOperationException("Nie udało się uruchomić skryptu Python.");
             }
         }
-        }
+    }
 
     public void NoCommand()
     {
         this.RequestClose();
     }
 
-    public void CancellCommand()
+    public void CancelCommand()
     {
         _cancellationTokenSource?.Cancel();
     }
 
+    public async Task ShowReconstruction()
+    {
+        string denseDirectory = ChooseDenseDirectory();
+
+        string inputPath = Path.Combine(_workspacePath, "dense", denseDirectory, "fused.ply");
+        string outputPath = Path.Combine(_workspacePath, "dense", denseDirectory, "poisson_mesh.ply");
+
+        if (!File.Exists(outputPath))
+        {
+            CurrentText = "Preparing model to display...";
+            IsLoading = true;
+            IsFinished = false;
+
+            await RunPythonScriptAsync("save_mesh.py", inputPath, outputPath);
+
+            IsLoading = false;
+            IsFinished = true;
+
+            CurrentText = "Reconstruction is ready, do you want to display it?";
+        }
+
+        await RunPythonScriptAsync("show_mesh.py", outputPath);
+    }
+
+    private string ChooseDenseDirectory()
+    {
+        try
+        {
+            string pathToDenses = Path.Combine(_workspacePath, "dense");
+
+            if (Directory.Exists(pathToDenses))
+            {
+                string[] directories = Directory.GetDirectories(pathToDenses);
+
+                if (directories.Length == 1)
+                    return "0";
+
+                string maxDirectory = null;
+                int maxElements = -1;
+
+                foreach (var dir in directories)
+                {
+                    string dirPath = Path.Combine(pathToDenses, dir, "images");
+
+                    int elementCount = Directory.GetFileSystemEntries(dirPath).Length;
+
+                    if (elementCount > maxElements)
+                    {
+                        maxElements = elementCount;
+                        maxDirectory = dir;
+                    }
+                }
+
+                return maxDirectory;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Wystąpił błąd: {ex.Message}");
+        }
+
+        return "0";
+    }
+
     protected override void OnClose()
     {
-        CancellCommand();
+        //CancelCommand();
         base.OnClose();
     }
 }

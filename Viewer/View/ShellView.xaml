@@ -12,8 +12,9 @@
         WindowStyle="SingleBorderWindow"
         Width="1366"
         Height="768"
-        ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanMinimize"
+        Icon="/View/favicon.ico"
+        WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}">
 
     <Window.Resources>
@@ -106,10 +107,6 @@
                     Style="{StaticResource ButtonStyle}"/>
             <Border Style="{StaticResource SeparatorStyle}"
                     Visibility="{Binding StopRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="test"
-                Content="test"
-                Command="{s:Action OpenVisualisation}"
-                Style="{StaticResource ButtonStyle}"/>
         </StackPanel>
 
         <StackPanel Grid.Column="2"
