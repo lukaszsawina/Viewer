@@ -10,16 +10,17 @@ using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 namespace Viewer.View
 {
     /// <summary>
-    /// Interaction logic for VisualisationView.xaml
+    /// Interaction logic for MenuView.xaml
     /// </summary>
-    public partial class VisualisationView : Window
+    public partial class MenuView : UserControl
     {
-        public VisualisationView()
+        public MenuView()
         {
             InitializeComponent();
         }

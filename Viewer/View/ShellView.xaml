@@ -12,8 +12,9 @@
         WindowStyle="SingleBorderWindow"
         Width="1366"
         Height="768"
-        ResizeMode="NoResize"
-        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanMinimize"
+        Icon="/View/favicon.ico"
+        WindowStartupLocation="CenterScreen"
         Background="{StaticResource BackgroundBrush}">
 
     <Window.Resources>
@@ -28,19 +29,9 @@
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
 
-        <Grid.RowDefinitions>
-            <RowDefinition Height="auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="auto"/>
-        </Grid.RowDefinitions>
+        <ContentControl s:View.Model="{Binding CameraImageView}"/>
 
-        <Image Source="{Binding CameraImage}" 
-               Stretch="Fill" 
-               Margin="10" 
-               Grid.RowSpan="3"/>
-        
         <Border Grid.Column="1"
-                Grid.RowSpan="3"
                 Height="auto" 
                 Width="4"
                 Background="{StaticResource SecondaryBrush}"
@@ -48,83 +39,7 @@
                 CornerRadius="5"
                 />
 
-        <StackPanel Grid.Column="2">
-            <TextBlock Text="Viewer" 
-                       Style="{StaticResource TitleStyles}"/>
-            <TextBlock Text="{Binding CurrentText}" 
-                       FontSize="14" 
-                       Foreground="{StaticResource OrangeBrush}"
-                       TextWrapping="Wrap"
-                       Padding="5 0"/>
-            <TextBlock Text="Camera source" 
-                       FontSize="24" 
-                       Foreground="{StaticResource TextBrush}"
-                       Padding="5 0"/>
-            <ComboBox ItemsSource="{Binding CameraList}"
-                      SelectedIndex="{Binding SelectedCameraIndex}"
-                      Style="{StaticResource CameraSourceStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"/>
-            <Button x:Name="Start_btn"
-                    Content="Start"
-                    Visibility="{Binding StartButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Command="{s:Action StartCamera}"
-                    Style="{StaticResource ButtonStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"
-                    Visibility="{Binding StartButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="Stop_btn"
-                    Content="Stop"
-                    Visibility="{Binding StopButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Command="{s:Action StopCamera}"
-                    Style="{StaticResource ButtonStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"
-                    Visibility="{Binding StopButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="StartWorkspaceCapture_btn"
-                Content="Start workspace capture"
-                Visibility="{Binding StartedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                Command="{s:Action StartWorkspaceCapture}"
-                Style="{StaticResource ButtonStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"
-                Visibility="{Binding StartedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="StopWorkspaceCapture_btn"
-                Content="Stop workspace capture"
-                Visibility="{Binding StopedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                Command="{s:Action StopWorkspaceCapture}"
-                Style="{StaticResource ButtonStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"
-                Visibility="{Binding StopedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="Start_Rec_btn"
-                    Content="Record"
-                    Visibility="{Binding StartRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Command="{s:Action StartRecording}"
-                    Style="{StaticResource ButtonStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"
-                    Visibility="{Binding StartRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="Stop_Rec_btn"
-                    Content="Stop Recording"
-                    Visibility="{Binding StopRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Command="{s:Action StopRecording}"
-                    Style="{StaticResource ButtonStyle}"/>
-            <Border Style="{StaticResource SeparatorStyle}"
-                    Visibility="{Binding StopRecButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
-            <Button x:Name="test"
-                Content="test"
-                Command="{s:Action OpenVisualisation}"
-                Style="{StaticResource ButtonStyle}"/>
-        </StackPanel>
-
-        <StackPanel Grid.Column="2"
-                    Grid.Row="2">
-            <Button x:Name="Recordings_btn"
-                    Content="Recordings"
-                    Command="{s:Action OpenFolder}"
-                    Style="{StaticResource ButtonStyle}" />
-            <Border Style="{StaticResource SeparatorStyle}"/>
-            <Button x:Name="Workspaces_btn"
-                Content="Workspaces"
-                Command="{s:Action OpenFolderWorkspaces}"
-                Style="{StaticResource ButtonStyle}" />
-            <Border Style="{StaticResource SeparatorStyle}"/>
-        </StackPanel>
-         
+        <ContentControl s:View.Model="{Binding MenuView}"
+                        Grid.Column="2"/>
     </Grid>
 </Window>
