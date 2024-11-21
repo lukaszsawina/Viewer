@@ -3,7 +3,9 @@ using OpenCvSharp.WpfExtensions;
 using Stylet;
 using StyletIoC;
 using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -84,8 +86,14 @@ public class CameraImageViewModel:
 
     private async Task CaptureFrames(CancellationToken token)
     {
+        var frameQueue = new ConcurrentQueue<(Mat frame, int frameIndex)>();
+        _ = Task.Run(() => ProcessFrameQueue(frameQueue, token), token);
+
         using (var mat = new Mat())
         {
+            var stopwatch = Stopwatch.StartNew();
+            const int targetFrameTime = 30;
+
             while (!token.IsCancellationRequested)
             {
                 try
@@ -108,7 +116,7 @@ public class CameraImageViewModel:
 
                         if (!string.IsNullOrEmpty(CurrentState.WorkspaceFolderPath) && frameCount % 10 == 0)
                         {
-                            await Task.Run(() => SaveFrameAsImage(mat, frameCount / 10));
+                            frameQueue.Enqueue((mat.Clone(), frameCount / 5));
                         }
 
                         frameCount++;
@@ -126,8 +134,41 @@ public class CameraImageViewModel:
                     await Task.Delay(100);
                 }
 
-                await Task.Delay(30);
+                var elapsed = stopwatch.ElapsedMilliseconds;
+                var delay = targetFrameTime - (int)elapsed;
+                if (delay > 0)
+                {
+                    await Task.Delay(delay);
+                }
+                stopwatch.Restart();
             }
+        }
+    }
+
+    private async Task ProcessFrameQueue(ConcurrentQueue<(Mat frame, int frameIndex)> frameQueue, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            while (frameQueue.TryDequeue(out var item))
+            {
+                try
+                {
+                    using (var resizedFrame = new Mat())
+                    {
+                        Cv2.Resize(item.frame, resizedFrame, new OpenCvSharp.Size(item.frame.Width / 2, item.frame.Height / 2));
+
+                        SaveFrameAsImage(resizedFrame, item.frameIndex);
+                    }
+
+                    item.frame.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error saving frame: {ex.Message}");
+                }
+            }
+
+            await Task.Delay(10);
         }
     }
 
@@ -183,7 +224,7 @@ public class CameraImageViewModel:
         }
     }
 
-    private void StopCamera()
+    public void StopCamera()
     {
         if (_cancellationTokenSource != null)
         {
