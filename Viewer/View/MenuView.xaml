@@ -121,6 +121,8 @@
                 Content="Open visualisation"
                 Style="{StaticResource ButtonStyle}"
                 Command="{s:Action OpenVisualisation}" />
+            <Border 
+                Style="{StaticResource SeparatorStyle}"/>
         </StackPanel>
     </Grid>
 </UserControl>

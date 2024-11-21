@@ -76,8 +76,8 @@ public class WorkspaceProcessingViewModel : Screen
         var cancellationToken = _cancellationTokenSource.Token;
         string colmapBatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "COLMAP-CL", "colmap.bat");
 
-        string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
-        //string colmapArgument = $"--help";
+        //string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
+        string colmapArgument = $"--help";
 
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
@@ -120,12 +120,12 @@ public class WorkspaceProcessingViewModel : Screen
                 }
             });
 
-            if(taskCanceled || CheckResult())
+            if(taskCanceled || !CheckResult())
             {
                 DeleteAllExceptDirectory(_workspacePath, Path.Combine(_workspacePath, "images"));
                 IsLoading = false;
                 AreButtonsVisible = true;
-                CurrentText = "Do you want to start processing Your workspace?";
+                CurrentText = "Process was cancelled or failed. Do you want to start processing Your workspace?";
             }
             else
             {
@@ -168,14 +168,15 @@ public class WorkspaceProcessingViewModel : Screen
 
         var directories = Directory.GetDirectories(parentDirectory);
         var files = Directory.GetFiles(parentDirectory);
+        var fullDirectoryToKeep = Path.GetFullPath(directoryToKeep);
 
-        //foreach (var directory in directories)
-        //{
-        //    if (Path.GetFileName(directory) != directoryToKeep)
-        //    {
-        //        Directory.Delete(directory, true);
-        //    }
-        //}
+        foreach (var directory in directories)
+        {
+            if (!string.Equals(Path.GetFullPath(directory), fullDirectoryToKeep, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
 
         foreach (var file in files)
         {

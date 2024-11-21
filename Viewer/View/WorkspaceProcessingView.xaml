@@ -26,18 +26,9 @@
         </Grid.RowDefinitions>
 
         <StackPanel>
-            <TextBlock Grid.Row="0"
-                       Text="?" 
-                       FontSize="16" 
-                       Foreground="{StaticResource OrangeBrush}" 
-                       Cursor="Help" 
-                       ToolTip="Dodatkowe informacje o aplikacji"
-                       HorizontalAlignment="Right"
-                       VerticalAlignment="Top"
-                       Margin="10 0 10 0"/>
             <TextBlock Text="Workspace Processing" 
                        Style="{StaticResource TitleStyles}"
-                       Padding="0 0 0 20"
+                       Padding="0 20"
                        FontSize="24"/>
             <TextBlock Text="{Binding CurrentText}" 
                        FontSize="14" 

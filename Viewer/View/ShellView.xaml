@@ -10,6 +10,7 @@
         d:DataContext="{d:DesignInstance local:ShellViewModel}"
         Title="Viewer"
         WindowStyle="SingleBorderWindow"
+        WindowState="Maximized"
         MinWidth="1366"
         MinHeight="768"
         Icon="/View/favicon.ico"
@@ -19,7 +20,6 @@
     <Window.Resources>
         <helpers:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
-
 
     <Grid>
         <Grid.ColumnDefinitions>
