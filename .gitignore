@@ -365,3 +365,7 @@ FodyWeavers.xsd
 !/Viewer/COLMAP-CL/bin
 
 !/Viewer/COLMAP-CL/bin/colmap.exe	
+
+!BuildProject.bat
+
+Viewer.lnk

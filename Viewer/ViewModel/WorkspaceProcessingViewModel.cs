@@ -1,4 +1,5 @@
-﻿using Stylet;
+﻿using OpenCvSharp;
+using Stylet;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -19,7 +20,7 @@ public class WorkspaceProcessingViewModel : Screen
     Process colmapProcess = null;
     Process exeProcess = null;
     private CancellationTokenSource _cancellationTokenSource;
-    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_mieszkanie_3";
+    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_mieszkanie";
 
     public string CurrentText
     {
@@ -75,8 +76,8 @@ public class WorkspaceProcessingViewModel : Screen
         var cancellationToken = _cancellationTokenSource.Token;
         string colmapBatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "COLMAP-CL", "colmap.bat");
 
-        string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
-        //string colmapArgument = $"--help";
+        //string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
+        string colmapArgument = $"--help";
 
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
@@ -119,11 +120,12 @@ public class WorkspaceProcessingViewModel : Screen
                 }
             });
 
-            if(taskCanceled)
+            if(taskCanceled || !CheckResult())
             {
+                DeleteAllExceptDirectory(_workspacePath, Path.Combine(_workspacePath, "images"));
                 IsLoading = false;
                 AreButtonsVisible = true;
-                CurrentText = "Do you want to start processing Your workspace?";
+                CurrentText = "Process was cancelled or failed. Do you want to start processing Your workspace?";
             }
             else
             {
@@ -141,6 +143,44 @@ public class WorkspaceProcessingViewModel : Screen
         finally
         {
             _cancellationTokenSource?.Dispose();
+        }
+    }
+
+    private bool CheckResult()
+    {
+        string path = Path.Combine(_workspacePath, "dense", "0");
+        if (!Directory.Exists(path))
+        {
+            return false;
+        }
+
+        string filePath = Path.Combine(path, "fused.ply");
+
+        return File.Exists(filePath);
+    }
+
+    private void DeleteAllExceptDirectory(string parentDirectory, string directoryToKeep)
+    {
+        if (!Directory.Exists(parentDirectory))
+        {
+            throw new DirectoryNotFoundException($"{parentDirectory} don't exist.");
+        }
+
+        var directories = Directory.GetDirectories(parentDirectory);
+        var files = Directory.GetFiles(parentDirectory);
+        var fullDirectoryToKeep = Path.GetFullPath(directoryToKeep);
+
+        foreach (var directory in directories)
+        {
+            if (!string.Equals(Path.GetFullPath(directory), fullDirectoryToKeep, StringComparison.OrdinalIgnoreCase))
+            {
+                Directory.Delete(directory, true);
+            }
+        }
+
+        foreach (var file in files)
+        {
+            File.Delete(file);
         }
     }
 
@@ -194,7 +234,7 @@ public class WorkspaceProcessingViewModel : Screen
         string denseDirectory = ChooseDenseDirectory();
 
         string inputPath = Path.Combine(_workspacePath, "dense", denseDirectory, "fused.ply");
-        string outputPath = Path.Combine(_workspacePath, "dense", denseDirectory, "poisson_mesh.ply");
+        string outputPath = Path.Combine(_workspacePath, "poisson_mesh.ply");
 
         if (!File.Exists(outputPath))
         {
@@ -255,7 +295,8 @@ public class WorkspaceProcessingViewModel : Screen
 
     protected override void OnClose()
     {
-        //CancelCommand();
+        if (IsLoading)
+            CancelCommand();
         base.OnClose();
     }
 }

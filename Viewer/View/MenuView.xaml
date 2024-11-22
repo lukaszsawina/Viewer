@@ -32,15 +32,17 @@
                 TextWrapping="Wrap"
                 Padding="5 0"/>
             <TextBlock 
-                Text="Camera source:" 
+                Text="{Binding SelectedCameraIndex, StringFormat='Camera source: {0}'}"
                 FontSize="24" 
                 Foreground="{StaticResource TextBrush}"
                 Padding="5 0"/>
             <ComboBox 
                 ItemsSource="{Binding CameraList}"
                 SelectedIndex="{Binding SelectedCameraIndex}"
+                Visibility="{Binding StartButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource CameraSourceStyle}"/>
             <Border 
+                Visibility="{Binding StartButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource SeparatorStyle}"/>
             <Button 
                 x:Name="Start_btn"
@@ -112,6 +114,13 @@
                 Content="Workspaces"
                 Command="{s:Action OpenFolderWorkspaces}"
                 Style="{StaticResource ButtonStyle}" />
+            <Border 
+                Style="{StaticResource SeparatorStyle}"/>
+            <Button 
+                x:Name="Visualisation_btn"
+                Content="Open visualisation"
+                Style="{StaticResource ButtonStyle}"
+                Command="{s:Action OpenVisualisation}" />
             <Border 
                 Style="{StaticResource SeparatorStyle}"/>
         </StackPanel>

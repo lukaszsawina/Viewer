@@ -1,4 +1,5 @@
-﻿using OpenCvSharp;
+﻿using Microsoft.Win32;
+using OpenCvSharp;
 using Stylet;
 using StyletIoC;
 using System;
@@ -6,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows;
 using Viewer.Events;
 using Viewer.Model;
@@ -17,6 +19,7 @@ public class MenuViewModel : Screen
     private readonly IEventAggregator _eventAggregator;
     private readonly IWindowManager _windowManager;
 
+    public WorkspaceProcessingViewModel _workspaceProcessingViewModel { get; set; }
     public ObservableCollection<string> CameraList { get; set; } = new ObservableCollection<string>();
 
     private StateModel _currentState;
@@ -70,7 +73,7 @@ public class MenuViewModel : Screen
         get => _currentText;
         set
         {
-            
+            _currentText = value;
             NotifyOfPropertyChange(() => CurrentText);
         }
     }
@@ -172,9 +175,10 @@ public class MenuViewModel : Screen
 
     public void StopWorkspaceCapture()
     {
-        var view = new WorkspaceProcessingViewModel();
-        _windowManager.ShowWindow(view);
+        _workspaceProcessingViewModel = new WorkspaceProcessingViewModel();
 
+        _windowManager.ShowWindow(_workspaceProcessingViewModel);
+        
         CurrentState.WorkspaceFolderPath = null;
         IsStartedWorkspaceCapture = false;
         _eventAggregator.Publish(new StateChangeEvent(CurrentState));
@@ -224,6 +228,68 @@ public class MenuViewModel : Screen
         }
 
         Process.Start("explorer.exe", folderPath);
+    }
+
+    public async Task OpenVisualisation()
+    {
+        string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Workspaces");
+
+        var openFileDialog = new OpenFileDialog
+        {
+            Title = "Select a File",
+            Filter = "Fused Mesh File (poisson_mesh.ply)|poisson_mesh.ply",
+            InitialDirectory = folderPath
+        };
+
+        if (openFileDialog.ShowDialog() == true)
+        {
+            string selectedFilePath = openFileDialog.FileName;
+
+            await ExecuteCommandWithFile(selectedFilePath);
+        }
+    }
+
+    private async Task ExecuteCommandWithFile(string filePath)
+    {
+        string scriptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Workspace_Visualiser", "show_mesh.py");
+
+        string arguments = $"\"{scriptPath}\" \"{filePath}\"";
+
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = "python.exe",
+            Arguments = arguments,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        using (Process process = Process.Start(startInfo))
+        {
+            if (process != null)
+            {
+                await process.WaitForExitAsync();
+            }
+            else
+            {
+                throw new InvalidOperationException("Unable to run python script.");
+            }
+        }
+    }
+
+    public void CloseWorkspaceProcessing()
+    {
+        if (_workspaceProcessingViewModel is not null)
+        {
+            if(_workspaceProcessingViewModel.IsLoading)
+               _workspaceProcessingViewModel.CancelCommand();
+            _workspaceProcessingViewModel.RequestClose();
+        }
+    }
+
+    protected override void OnClose()
+    {
+        CloseWorkspaceProcessing();
+        base.OnActivate();
     }
 
     private void CurrentState_PropertyChanged(object sender, PropertyChangedEventArgs e)

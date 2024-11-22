@@ -9,7 +9,7 @@
     <Grid>
         <Image 
             Source="{Binding CameraImage}" 
-            Stretch="Fill"
+            Stretch="Uniform"
             Margin="10"/>
     </Grid>
 </UserControl>
