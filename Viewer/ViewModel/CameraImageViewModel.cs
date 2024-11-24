@@ -27,7 +27,7 @@ public class CameraImageViewModel:
     private VideoWriter _videoWriter;
     private CancellationTokenSource _cancellationTokenSource;
 
-    private int frameCount = 0;
+    private long frameCount = 0;
 
     private BitmapSource _cameraImage;
     public BitmapSource CameraImage
@@ -86,14 +86,8 @@ public class CameraImageViewModel:
 
     private async Task CaptureFrames(CancellationToken token)
     {
-        var frameQueue = new ConcurrentQueue<(Mat frame, int frameIndex)>();
-        _ = Task.Run(() => ProcessFrameQueue(frameQueue, token), token);
-
         using (var mat = new Mat())
         {
-            var stopwatch = Stopwatch.StartNew();
-            const int targetFrameTime = 30;
-
             while (!token.IsCancellationRequested)
             {
                 try
@@ -103,7 +97,6 @@ public class CameraImageViewModel:
                     {
                         var bitmapImage = mat.ToBitmapSource();
                         bitmapImage.Freeze();
-
                         Application.Current.Dispatcher.Invoke(() =>
                         {
                             CameraImage = bitmapImage;
@@ -114,12 +107,12 @@ public class CameraImageViewModel:
                             _videoWriter.Write(mat);
                         }
 
-                        if (!string.IsNullOrEmpty(CurrentState.WorkspaceFolderPath) && frameCount % 10 == 0)
+                        if (!string.IsNullOrEmpty(CurrentState.WorkspaceFolderPath) )
                         {
-                            frameQueue.Enqueue((mat.Clone(), frameCount / 5));
+                            frameCount++;
+                            if (frameCount % 5 == 0)
+                            await Task.Run(() => SaveFrameAsImage(mat, frameCount / 5));
                         }
-
-                        frameCount++;
                     }
                     else
                     {
@@ -133,56 +126,36 @@ public class CameraImageViewModel:
                     MessageBox.Show("Unable to fetch video from camera.");
                     await Task.Delay(100);
                 }
-
-                var elapsed = stopwatch.ElapsedMilliseconds;
-                var delay = targetFrameTime - (int)elapsed;
-                if (delay > 0)
-                {
-                    await Task.Delay(delay);
-                }
-                stopwatch.Restart();
+                await Task.Delay(30);
             }
         }
     }
 
-    private async Task ProcessFrameQueue(ConcurrentQueue<(Mat frame, int frameIndex)> frameQueue, CancellationToken token)
-    {
-        while (!token.IsCancellationRequested)
-        {
-            while (frameQueue.TryDequeue(out var item))
-            {
-                try
-                {
-                    using (var resizedFrame = new Mat())
-                    {
-                        Cv2.Resize(item.frame, resizedFrame, new OpenCvSharp.Size(item.frame.Width / 2, item.frame.Height / 2));
-
-                        SaveFrameAsImage(resizedFrame, item.frameIndex);
-                    }
-
-                    item.frame.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error saving frame: {ex.Message}");
-                }
-            }
-
-            await Task.Delay(10);
-        }
-    }
-
-    private void SaveFrameAsImage(Mat frame, int imageIndex)
+    private void SaveFrameAsImage(Mat frame, long imageIndex)
     {
         string imagesFolderPath = Path.Combine(CurrentState.WorkspaceFolderPath, "images");
+
+        if (!Directory.Exists(imagesFolderPath))
+        {
+            Directory.CreateDirectory(imagesFolderPath);
+        }
+
         string filePath = Path.Combine(imagesFolderPath, $"{imageIndex}.jpg");
 
-        Cv2.ImWrite(filePath, frame);
+        using (var resizedFrame = new Mat())
+        {
+            Cv2.Resize(frame, resizedFrame, new OpenCvSharp.Size(frame.Width / 2, frame.Height / 2));
+
+            Cv2.ImWrite(filePath, resizedFrame);
+        }
     }
 
     public void Handle(StateChangeEvent message)
     {
         CurrentState = message.State;
+
+        if (CurrentState.WorkspaceFolderPath is not null)
+            frameCount = 0;
     }
 
     public void Handle(CameraSourceChangeEvent message)

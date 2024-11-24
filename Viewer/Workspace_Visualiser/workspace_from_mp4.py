@@ -1,31 +1,45 @@
-import open3d as o3d
-import sys
+from pathlib import Path
+import cv2
 
-def show_mesh_with_gui(mesh_path):
-    # Wczytanie pliku PLY
-    mesh = o3d.io.read_triangle_mesh(mesh_path)
+# Ścieżka do folderu, gdzie będą zapisywane obrazy
+imagePath = Path('project/images')
+imagePath.mkdir(parents=True, exist_ok=True)
 
-    # Sprawdzenie, czy mesh został załadowany poprawnie
-    if not mesh.is_empty():
-        # Tworzenie wizualizatora Open3D
-        vis = o3d.visualization.Visualizer()
-        vis.create_window(window_name="Wizualizacja PLY", width=800, height=600)
+# Ścieżka do pliku MP4
+video_path = 'test_film.mp4'
 
-        # Dodanie geometrii
-        vis.add_geometry(mesh)
+# Otwieranie pliku MP4
+cap = cv2.VideoCapture(video_path)
 
-        # Uruchomienie wizualizacji
-        vis.run()
+frame_no = 0
 
-        # Zamknięcie okna wizualizacji po zakończeniu
-        vis.destroy_window()
-    else:
-        print(f"Błąd: nie udało się wczytać siatki z pliku {mesh_path}")
+# Sprawdzenie, czy plik został poprawnie otwarty
+if not cap.isOpened():
+    print("Nie udało się otworzyć pliku wideo")
+else:
+    while cap.isOpened():
+        ret, frame = cap.read()
 
-if __name__ == "__main__":
-    # Obsługa argumentów z linii poleceń
-    if len(sys.argv) != 2:
-        print("Użycie: python script.py <mesh_path>")
-    else:
-        mesh_path = sys.argv[1]
-        show_mesh_with_gui(mesh_path)
+        # Jeżeli uda się odczytać klatkę
+        if ret:
+            # Zapisujemy co 5-tą klatkę
+            if frame_no % 5 == 0:
+                # Zmniejszenie rozmiaru zdjęcia o połowę
+                height, width = frame.shape[:2]
+                resized_frame = cv2.resize(frame, (width // 2, height // 2))
+
+                # Ścieżka do zapisu
+                target = str(imagePath / f'{frame_no}.jpg')
+                cv2.imwrite(target, resized_frame)
+
+            frame_no += 1
+
+            # Zatrzymujemy po 30 minutach wideo (zakładając 30 FPS)
+            if frame_no > 60 * 30:
+                break
+        else:
+            # Jeśli nie można odczytać więcej klatek, kończymy pętlę
+            break
+
+# Zwolnienie zasobów
+cap.release()
