@@ -162,8 +162,12 @@ public class MenuViewModel : Screen
 
     public void StartWorkspaceCapture()
     {
-        string date = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-        CurrentState.WorkspaceFolderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Workspaces/Workspace_{date}");
+        string mainDictionaryPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, $"Workspaces/Workspace_{DateTime.Now.ToString("yyyMMdd")}");
+
+        if(!Path.Exists(mainDictionaryPath))
+            Directory.CreateDirectory(mainDictionaryPath); 
+
+        CurrentState.WorkspaceFolderPath = Path.Combine(mainDictionaryPath, $"Workspace_{DateTime.Now.ToString("HHmmss")}");
         Directory.CreateDirectory(CurrentState.WorkspaceFolderPath);
 
         string imagesFolderPath = Path.Combine(CurrentState.WorkspaceFolderPath, "images");
@@ -175,7 +179,7 @@ public class MenuViewModel : Screen
 
     public void StopWorkspaceCapture()
     {
-        _workspaceProcessingViewModel = new WorkspaceProcessingViewModel();
+        _workspaceProcessingViewModel = new WorkspaceProcessingViewModel(_currentState.WorkspaceFolderPath);
 
         _windowManager.ShowWindow(_workspaceProcessingViewModel);
         
@@ -228,6 +232,38 @@ public class MenuViewModel : Screen
         }
 
         Process.Start("explorer.exe", folderPath);
+    }
+
+    public void OpenWorkspaceProcessing()
+    {
+        string folderPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Workspaces");
+
+        var folderDialog = new OpenFolderDialog
+        {
+            InitialDirectory = folderPath
+        };
+
+        if (folderDialog.ShowDialog() == true)
+        {
+            if(CheckWorkspaceDirectory(folderDialog.FolderName))
+            {
+                _workspaceProcessingViewModel = new WorkspaceProcessingViewModel(folderDialog.FolderName);
+
+                _windowManager.ShowWindow(_workspaceProcessingViewModel);
+            }
+            else
+            {
+                MessageBox.Show("No \'Images\' directory found in the workspace", "Error");
+            }
+        }
+    }
+
+    private bool CheckWorkspaceDirectory(string folderPath)
+    {
+        if (!Path.Exists(Path.Combine(folderPath, "Images")))
+            return false;
+
+        return true;
     }
 
     public async Task OpenVisualisation()
