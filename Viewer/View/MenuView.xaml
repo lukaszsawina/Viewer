@@ -64,10 +64,41 @@
                 Visibility="{Binding StopButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
             <Button 
                 x:Name="StartWorkspaceCapture_btn"
-                Content="Start workspace capture"
                 Visibility="{Binding StartedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                 Command="{s:Action StartWorkspaceCapture}"
-                Style="{StaticResource ButtonStyle}"/>
+                Style="{StaticResource ButtonStyle}">
+                <Button.Content>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="Start workspace capture" VerticalAlignment="Center" />
+
+                        <Border Grid.Column="1" Margin="5,0,0,0" Background="Transparent" VerticalAlignment="Center">
+                            <TextBlock 
+                                Text="&#xE946;" 
+                                FontFamily="Segoe MDL2 Assets"
+                                FontWeight="Bold"
+                                FontSize="16"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Top">
+                                <TextBlock.ToolTip>
+                                    <ToolTip>
+                                        <TextBlock TextWrapping="Wrap" Width="200">
+                                            <Run Text="For optimal 3D visualization results:" />
+                                            <LineBreak />
+                                            <Run Text="It is recommended to create smaller workspaces and avoid repeating the same paths." />
+                                            <LineBreak />
+                                            <Run Text="Dividing the area into smaller sections and processing them individually helps achieve more accurate and clearer visualizations." />
+                                        </TextBlock>
+                                    </ToolTip>
+                                </TextBlock.ToolTip>
+                            </TextBlock>
+                        </Border>
+                    </Grid>
+                </Button.Content>
+            </Button>
             <Border 
                 Style="{StaticResource SeparatorStyle}"
                 Visibility="{Binding StartedWorkspaceCaptureVisible, Converter={StaticResource BooleanToVisibilityConverter}}"/>
@@ -114,6 +145,13 @@
                 Content="Workspaces"
                 Command="{s:Action OpenFolderWorkspaces}"
                 Style="{StaticResource ButtonStyle}" />
+            <Border 
+                Style="{StaticResource SeparatorStyle}"/>
+            <Button 
+                x:Name="Processing_btn"
+                Content="Workspace Processing"
+                Style="{StaticResource ButtonStyle}"
+                Command="{s:Action OpenWorkspaceProcessing}"/>
             <Border 
                 Style="{StaticResource SeparatorStyle}"/>
             <Button 

@@ -20,7 +20,7 @@ public class WorkspaceProcessingViewModel : Screen
     Process colmapProcess = null;
     Process exeProcess = null;
     private CancellationTokenSource _cancellationTokenSource;
-    private readonly string _workspacePath = "D:\\DEV\\Projekt_inzynierka\\projekt_mieszkanie";
+    private readonly string _workspacePath;
 
     public string CurrentText
     {
@@ -65,8 +65,9 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
-    public WorkspaceProcessingViewModel()
+    public WorkspaceProcessingViewModel(string workspacePath)
     {
+        _workspacePath = workspacePath;
         _currentText = "Do you want to start processing Your workspace?";
     }
 
@@ -76,8 +77,8 @@ public class WorkspaceProcessingViewModel : Screen
         var cancellationToken = _cancellationTokenSource.Token;
         string colmapBatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "COLMAP-CL", "colmap.bat");
 
-        //string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
-        string colmapArgument = $"--help";
+        string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
+        //string colmapArgument = $"--help";
 
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
