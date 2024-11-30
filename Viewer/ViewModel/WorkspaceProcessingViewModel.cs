@@ -1,13 +1,15 @@
 ﻿using OpenCvSharp;
 using Stylet;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Shapes;
+using Viewer.Model.Quality;
 using Path = System.IO.Path;
 
 
@@ -15,13 +17,15 @@ namespace Viewer.ViewModel;
 
 public class WorkspaceProcessingViewModel : Screen
 {
-
-    private string _currentText;
-    Process colmapProcess = null;
-    Process exeProcess = null;
+    private Process colmapProcess = null;
+    private Process exeProcess = null;
+    private IQualityOption _qualityOption;
     private CancellationTokenSource _cancellationTokenSource;
     private readonly string _workspacePath;
 
+    public ObservableCollection<QualityType> Options { get; } = new ObservableCollection<QualityType>(Enum.GetValues(typeof(QualityType)) as QualityType[]);
+
+    private string _currentText;
     public string CurrentText
     {
         get => _currentText;
@@ -29,6 +33,29 @@ public class WorkspaceProcessingViewModel : Screen
         {
             _currentText = value;
             NotifyOfPropertyChange(() => CurrentText);
+        }
+    }
+
+    private bool _qualityOptionVisible = true;
+    public bool QualityOptionVisible
+    {
+        get => _qualityOptionVisible;
+        set
+        {
+            _qualityOptionVisible = value;
+            NotifyOfPropertyChange(() => QualityOptionVisible);
+        }
+    }
+
+    private QualityType _selectedOption;
+    public QualityType SelectedOption
+    {
+        get => _selectedOption;
+        set
+        {
+            _selectedOption = value;
+            _qualityOption = QualityModelFactory.CreateOption(_selectedOption);
+            NotifyOfPropertyChange(() => SelectedOption);
         }
     }
 
@@ -69,10 +96,12 @@ public class WorkspaceProcessingViewModel : Screen
     {
         _workspacePath = workspacePath;
         _currentText = "Do you want to start processing Your workspace?";
+        SelectedOption = QualityType.MEDIUM;
     }
 
     public async Task YesCommand()
     {
+        QualityOptionVisible = false;
         _cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = _cancellationTokenSource.Token;
         string colmapBatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "COLMAP-CL", "colmap.bat");
@@ -125,6 +154,7 @@ public class WorkspaceProcessingViewModel : Screen
             {
                 DeleteAllExceptDirectory(_workspacePath, Path.Combine(_workspacePath, "images"));
                 IsLoading = false;
+                QualityOptionVisible = true;
                 AreButtonsVisible = true;
                 CurrentText = "Process was cancelled or failed. Do you want to start processing Your workspace?";
             }
