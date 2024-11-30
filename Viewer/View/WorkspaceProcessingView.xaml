@@ -8,7 +8,7 @@
         xmlns:helpers="clr-namespace:Viewer.Helpers"
         mc:Ignorable="d"
         Title="Worskspace Processing" 
-        Height="240" Width="400"
+        Height="320" Width="400"
         ResizeMode="CanMinimize"
         WindowStyle="SingleBorderWindow"
         Icon="/View/favicon.ico"
@@ -21,8 +21,9 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="3*"/>
             <RowDefinition Height="2*"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <StackPanel>
@@ -38,7 +39,20 @@
                        Padding="5 0"/>
         </StackPanel>
 
-        <Grid Grid.Row="1">
+        <StackPanel Grid.Row="1">
+            <TextBlock 
+                Text="{Binding SelectedOption, StringFormat='Quality: {0}'}"
+                FontSize="16" 
+                Foreground="{StaticResource TextBrush}"
+                Padding="5 0"/>
+            <ComboBox 
+                ItemsSource="{Binding Options}"
+                SelectedIndex="{Binding SelectedOption}"
+                Visibility="{Binding QualityOptionVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                Style="{StaticResource CameraSourceStyle}"/> 
+        </StackPanel>
+
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
