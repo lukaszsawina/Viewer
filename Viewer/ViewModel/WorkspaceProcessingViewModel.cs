@@ -23,7 +23,11 @@ public class WorkspaceProcessingViewModel : Screen
     private CancellationTokenSource _cancellationTokenSource;
     private readonly string _workspacePath;
 
-    public ObservableCollection<QualityType> Options { get; } = new ObservableCollection<QualityType>(Enum.GetValues(typeof(QualityType)) as QualityType[]);
+    public ObservableCollection<QualityType> Options { get; set; } = new ObservableCollection<QualityType>(
+            Enum.GetValues(typeof(QualityType))
+                .Cast<QualityType>()
+                .Where(q => q != QualityType.UNDEFINED)
+        );
 
     private string _currentText;
     public string CurrentText
@@ -47,15 +51,16 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
-    private QualityType _selectedOption;
+    private QualityType _selectedOption = QualityType.UNDEFINED;
     public QualityType SelectedOption
     {
         get => _selectedOption;
         set
         {
-            _selectedOption = value;
+            _selectedOption = value+1;
             _qualityOption = QualityModelFactory.CreateOption(_selectedOption);
             NotifyOfPropertyChange(() => SelectedOption);
+            NotifyOfPropertyChange(() => IsOptionSelected);
         }
     }
 
@@ -92,11 +97,12 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
+    public bool IsOptionSelected => SelectedOption != QualityType.UNDEFINED;
+
     public WorkspaceProcessingViewModel(string workspacePath)
     {
         _workspacePath = workspacePath;
         _currentText = "Do you want to start processing Your workspace?";
-        SelectedOption = QualityType.MEDIUM;
     }
 
     public async Task YesCommand()

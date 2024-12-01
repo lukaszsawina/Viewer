@@ -40,7 +40,7 @@
                 ItemsSource="{Binding CameraList}"
                 SelectedIndex="{Binding SelectedCameraIndex}"
                 Visibility="{Binding StartButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                Style="{StaticResource CameraSourceStyle}"/>
+                Style="{StaticResource ComboBoxStyle}"/>
             <Border 
                 Visibility="{Binding StartButtonVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
                 Style="{StaticResource SeparatorStyle}"/>

@@ -17,13 +17,14 @@ public static class QualityModelFactory
             QualityType.LOW => new LowQualityModel(),
             QualityType.MEDIUM => new MediumQualityModel(),
             QualityType.HIGH => new HighQualityModel(),
-            _ => throw new ArgumentException($"Unknown option type: {optionType}")
+            _ => throw new ArgumentException($"Invalid Option Type: {optionType}")
         };
     }
 }
 
 public enum QualityType
 {
+    UNDEFINED,
     LOW,
     MEDIUM, 
     HIGH
