@@ -22,8 +22,14 @@ public class WorkspaceProcessingViewModel : Screen
     private IQualityOption _qualityOption;
     private CancellationTokenSource _cancellationTokenSource;
     private readonly string _workspacePath;
+    private bool taskCanceled = false;
+    private static int currentProcesStateIndex = 0;
 
-    public ObservableCollection<QualityType> Options { get; } = new ObservableCollection<QualityType>(Enum.GetValues(typeof(QualityType)) as QualityType[]);
+    public ObservableCollection<QualityType> Options { get; set; } = new ObservableCollection<QualityType>(
+            Enum.GetValues(typeof(QualityType))
+                .Cast<QualityType>()
+                .Where(q => q != QualityType.UNDEFINED)
+        );
 
     private string _currentText;
     public string CurrentText
@@ -47,15 +53,16 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
-    private QualityType _selectedOption;
+    private QualityType _selectedOption = QualityType.UNDEFINED;
     public QualityType SelectedOption
     {
         get => _selectedOption;
         set
         {
-            _selectedOption = value;
+            _selectedOption = value+1;
             _qualityOption = QualityModelFactory.CreateOption(_selectedOption);
             NotifyOfPropertyChange(() => SelectedOption);
+            NotifyOfPropertyChange(() => IsOptionSelected);
         }
     }
 
@@ -92,39 +99,70 @@ public class WorkspaceProcessingViewModel : Screen
         }
     }
 
+    public bool IsOptionSelected => SelectedOption != QualityType.UNDEFINED;
+
     public WorkspaceProcessingViewModel(string workspacePath)
     {
         _workspacePath = workspacePath;
         _currentText = "Do you want to start processing Your workspace?";
-        SelectedOption = QualityType.MEDIUM;
     }
 
     public async Task YesCommand()
     {
+        taskCanceled = false;
+        CurrentText = "Reconstructor in progress...";
+        IsLoading = true;
+        AreButtonsVisible = false;
+        currentProcesStateIndex = 0;
+
+        Directory.CreateDirectory($"{_workspacePath}\\dense");
+        Directory.CreateDirectory($"{_workspacePath}\\sparse");
+
+        await RunColmapAsync("Feature extraction", $"feature_extractor --database_path {_workspacePath}\\database.db --image_path {_workspacePath}\\images --ImageReader.single_camera 1");
+        await RunColmapAsync("Exhaustive matching", $"exhaustive_matcher --database_path {_workspacePath}\\database.db");
+        await RunColmapAsync("Mapping", $"mapper --database_path {_workspacePath}\\database.db --image_path {_workspacePath}\\images --output_path {_workspacePath}\\sparse");
+        await RunColmapAsync("Image undistortion", $"image_undistorter --image_path {_workspacePath}\\images --input_path {_workspacePath}\\sparse\\0 --output_path {_workspacePath}\\dense --output_type COLMAP --max_image_size {_qualityOption.MaxImageSize}");
+        await RunColmapAsync("Patch match stereo", $"patch_match_stereo --workspace_path {_workspacePath}\\dense --workspace_format COLMAP --PatchMatchStereo.max_image_size {_qualityOption.MaxImageSize} --PatchMatchStereo.window_radius {_qualityOption.WindowRadius} --PatchMatchStereo.window_step {_qualityOption.WindowStep} --PatchMatchStereo.num_samples {_qualityOption.NumSamples} --PatchMatchStereo.num_iterations {_qualityOption.NumIterations}");
+        await RunColmapAsync("Stereo fusion", $"stereo_fusion --workspace_path {_workspacePath}\\dense --workspace_format COLMAP --input_type geometric --output_path {_workspacePath}/dense/fused.ply --StereoFusion.max_image_size {_qualityOption.MaxImageSize} --StereoFusion.check_num_images {_qualityOption.CheckNumImages}");
+
+        if (taskCanceled || !CheckResult())
+        {
+            DeleteAllExceptDirectory(_workspacePath, Path.Combine(_workspacePath, "images"));
+            IsLoading = false;
+            QualityOptionVisible = true;
+            AreButtonsVisible = true;
+            CurrentText = "Process was cancelled or failed. Do you want to start processing Your workspace?";
+        }
+        else
+        {
+            IsLoading = false;
+            IsFinished = true;
+            CurrentText = "Reconstruction is ready, do You want to display it?";
+        }
+    }
+
+    public async Task RunColmapAsync(string currentProcesName, string arguments)
+    {
+        if (taskCanceled)
+            return;
+
+        currentProcesStateIndex++;
+        CurrentText = $"Reconstructor in progress...\n {currentProcesStateIndex}/6 - {currentProcesName}";
         QualityOptionVisible = false;
         _cancellationTokenSource = new CancellationTokenSource();
         var cancellationToken = _cancellationTokenSource.Token;
         string colmapBatPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "COLMAP-CL", "colmap.bat");
 
-        string colmapArgument = $"automatic_reconstructor --workspace_path {_workspacePath} --image_path {_workspacePath}\\images --quality low --data_type individual --single_camera 1";
-        //string colmapArgument = $"--help";
-
         ProcessStartInfo startInfo = new ProcessStartInfo
         {
             FileName = colmapBatPath,
-            Arguments = colmapArgument,
+            Arguments = arguments,
             UseShellExecute = false,  
             CreateNoWindow = false,
         };
 
         try
         {
-            CurrentText = "Reconstructor in progress...";
-            IsLoading = true;
-            AreButtonsVisible = false;
-
-            bool taskCanceled = false;
-
             await Task.Run(() =>
             {
                 using (colmapProcess = new Process { StartInfo = startInfo })
@@ -149,21 +187,6 @@ public class WorkspaceProcessingViewModel : Screen
                     }
                 }
             });
-
-            if(taskCanceled || !CheckResult())
-            {
-                DeleteAllExceptDirectory(_workspacePath, Path.Combine(_workspacePath, "images"));
-                IsLoading = false;
-                QualityOptionVisible = true;
-                AreButtonsVisible = true;
-                CurrentText = "Process was cancelled or failed. Do you want to start processing Your workspace?";
-            }
-            else
-            {
-                IsLoading = false;
-                IsFinished = true;
-                CurrentText = "Reconstruction is ready, do You want to display it?";
-            }
         }
         catch (Exception ex)
         {
@@ -262,9 +285,7 @@ public class WorkspaceProcessingViewModel : Screen
 
     public async Task ShowReconstruction()
     {
-        string denseDirectory = ChooseDenseDirectory();
-
-        string inputPath = Path.Combine(_workspacePath, "dense", denseDirectory, "fused.ply");
+        string inputPath = Path.Combine(_workspacePath, "dense", "fused.ply");
         string outputPath = Path.Combine(_workspacePath, "poisson_mesh.ply");
 
         if (!File.Exists(outputPath))
@@ -284,50 +305,14 @@ public class WorkspaceProcessingViewModel : Screen
         await RunPythonScriptAsync("show_mesh.py", outputPath);
     }
 
-    private string ChooseDenseDirectory()
-    {
-        try
-        {
-            string pathToDenses = Path.Combine(_workspacePath, "dense");
-
-            if (Directory.Exists(pathToDenses))
-            {
-                string[] directories = Directory.GetDirectories(pathToDenses);
-
-                if (directories.Length == 1)
-                    return "0";
-
-                string maxDirectory = null;
-                int maxElements = -1;
-
-                foreach (var dir in directories)
-                {
-                    string dirPath = Path.Combine(pathToDenses, dir, "images");
-
-                    int elementCount = Directory.GetFileSystemEntries(dirPath).Length;
-
-                    if (elementCount > maxElements)
-                    {
-                        maxElements = elementCount;
-                        maxDirectory = dir;
-                    }
-                }
-
-                return maxDirectory;
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Wystąpił błąd: {ex.Message}");
-        }
-
-        return "0";
-    }
-
     protected override void OnClose()
     {
         if (IsLoading)
+        {
             CancelCommand();
+            if (!CheckResult())
+                DeleteAllExceptDirectory(_workspacePath, Path.Combine(_workspacePath, "images"));
+        }
         base.OnClose();
     }
 }
