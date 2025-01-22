@@ -1,16 +1,16 @@
 #include <IBusBM.h>
 #include <Servo.h>
 
-// Definicje pinów dla silnika
-const int IN1 = 2;   // Pin sterujący kierunkiem IN1
-const int IN2 = 4;   // Pin sterujący kierunkiem IN2
-const int PWM1 = 5;  // Pin PWM do kontroli prędkości silnika (kierunek 1)
-const int PWM2 = 3;  // Pin PWM do kontroli prędkości silnika (kierunek 2)
+const int IN1 = 2;   
+const int IN2 = 4;   
+const int PWM1 = 5;  
+const int PWM2 = 3;  
 const int servPin = 9;
 const int servPinH = 10;
 const int servPinV = 11;
 
-IBusBM ibus;   
+IBusBM ibus;  
+ibus.begin(Serial); 
 Servo servo; 
 Servo servoH; 
 Servo servoV; 
@@ -29,13 +29,11 @@ void resetControl(int &angle, Servo &servo);
 
 
 void setup() {
-  // Ustawienie pinów jako wyjścia
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(PWM1, OUTPUT);
   pinMode(PWM2, OUTPUT);
 
-  // Ustawienie początkowego kierunku silnika
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
 
@@ -77,11 +75,8 @@ void loop() {
     speed = -speed;
   }
 
-  int speedPWM1 = speed;
-  int speedPWM2 = speedPWM1;
-
-  analogWrite(PWM1, speedPWM1);
-  analogWrite(PWM2, speedPWM2);
+  analogWrite(PWM1, speed);
+  analogWrite(PWM2, speed);
 
   controlServo(servPin, angle, servo, servoAttached, targetAngle);
 
@@ -98,37 +93,35 @@ void controlCamServo(int servValue, int servPin, int &angle, int camSpeed, Servo
       servo.attach(servPin);
       servoAttached = true;
     }
-    angle += camSpeed;  // Ruch w lewo (zmniejszanie kąta)
+    angle += camSpeed;
 
-    // Ograniczenie kąta
     if (angle < 30) {
       angle = 30;
-    } else if (angle > 140) {
-      angle = 140;
+    } else if (angle > 150) {
+      angle = 150;
     }
 
-    servo.write(angle);  // Ustawienie kąta serwa
+    servo.write(angle);
   } else {
     if (servoAttached) {
-      servo.detach();  // Odłącz serwo, gdy nie zmienia się kąt
-      servoAttached = false;  // Flaga wskazująca, że serwo zostało odłączone
+      servo.detach();
+      servoAttached = false;
     }
   }
 }
 
 void controlServo(int servPin, int &angle, Servo &servo, bool &servoAttached, int targetAngle, int threshold) {
-  // Sprawdzenie, czy zmiana kąta jest wystarczająco duża
-  if (abs(targetAngle - angle) > threshold) {  // Jeśli różnica większa niż próg
+  if (abs(targetAngle - angle) > threshold) {
     if (!servoAttached) {
-      servo.attach(servPin);  // Podłącz serwo, jeśli nie jest podłączone
+      servo.attach(servPin);
       servoAttached = true;
     }
     
-    angle = targetAngle;  // Aktualizacja kąta
-    servo.write(angle);   // Ustawienie nowego kąta
+    angle = targetAngle;
+    servo.write(angle);
   } else {
     if (servoAttached) {
-      servo.detach();  // Odłącz serwo, gdy nie zmienia się kąt
+      servo.detach();
       servoAttached = false;
     }
   }

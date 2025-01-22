@@ -3,6 +3,7 @@ using OpenCvSharp;
 using Stylet;
 using StyletIoC;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -96,7 +97,7 @@ public class MenuViewModel : Screen
         _windowManager = windowManager;
         CurrentState = InitializeState();
         CurrentText = "Select camera source and press \"Start\"";
-        LoadAvailableCameras();
+        _ = RefreshCameras();
     }
 
     private StateModel InitializeState()
@@ -113,26 +114,54 @@ public class MenuViewModel : Screen
         return state;
     }
 
-    private void LoadAvailableCameras()
+    public async Task RefreshCameras()
     {
-        for (int i = 0; i < 5; i++)
+        var updatedCameraList = await Task.Run(() =>
         {
-            using (var cap = new VideoCapture(i))
+            var cameras = new List<string>();
+            for (int i = 0; i < 5; i++)
             {
-                if (cap.IsOpened())
+                using (var cap = new VideoCapture(i))
                 {
-                    CameraList.Add($"Source {i}");
+                    if (cap.IsOpened())
+                    {
+                        cameras.Add($"Source {i}");
+                    }
                 }
             }
-        }
+            return cameras;
+        });
 
-        if (CameraList.Count > 0)
+        Application.Current.Dispatcher.Invoke(() =>
         {
-            SelectedCameraIndex = 0;
-        }
-        else
+            foreach (var camera in updatedCameraList)
+            {
+                if (!CameraList.Contains(camera))
+                {
+                    CameraList.Add(camera);
+                }
+            }
+
+            for (int i = CameraList.Count - 1; i >= 0; i--)
+            {
+                if (!updatedCameraList.Contains(CameraList[i]))
+                {
+                    CameraList.RemoveAt(i);
+                }
+            }
+
+            if (CameraList.Count > 0 && (SelectedCameraIndex < 0 || SelectedCameraIndex >= CameraList.Count))
+            {
+                SelectedCameraIndex = 0;
+            }
+        });
+
+        if (CameraList.Count == 0)
         {
-            MessageBox.Show("No avaliable cameras");
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                MessageBox.Show("No available cameras");
+            });
         }
     }
 

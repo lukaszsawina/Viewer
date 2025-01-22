@@ -13,6 +13,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using Viewer.Events;
 using Viewer.Model;
+using Rect = OpenCvSharp.Rect;
 
 namespace Viewer.ViewModel;
 public class CameraImageViewModel: 
@@ -142,11 +143,16 @@ public class CameraImageViewModel:
 
         string filePath = Path.Combine(imagesFolderPath, $"{imageIndex}.jpg");
 
-        using (var resizedFrame = new Mat())
-        {
-            Cv2.Resize(frame, resizedFrame, new OpenCvSharp.Size(frame.Width / 2, frame.Height / 2));
+        int centerX = frame.Width / 2;
+        int centerY = frame.Height / 2;
+        int width = frame.Width / 2;
+        int height = frame.Height / 2;
 
-            Cv2.ImWrite(filePath, resizedFrame);
+        Rect roi = new Rect(centerX - width / 2, centerY - height / 2, width, height);
+
+        using (var croppedFrame = new Mat(frame, roi))
+        {
+            Cv2.ImWrite(filePath, croppedFrame);
         }
     }
 
