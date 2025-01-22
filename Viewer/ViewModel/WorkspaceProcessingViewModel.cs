@@ -202,7 +202,7 @@ public class WorkspaceProcessingViewModel : Screen
 
     private bool CheckResult()
     {
-        string path = Path.Combine(_workspacePath, "dense", "0");
+        string path = Path.Combine(_workspacePath, "dense");
         if (!Directory.Exists(path))
         {
             return false;
